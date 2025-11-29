@@ -1,5 +1,5 @@
-ถ้าอยากmv7 arm64
-MIN_IOS ?= 11.0        # บังคับ 11.0 เพื่อหลบ libarclite error ถ้าอยก 8.0 จริง ๆ ต้องปิด ARC
+ARCHS ?= armv7 arm64
+MIN_IOS ?= 11.0        # บังคับ 11.0 เพื่อหลบ libarclite error ถ้าอยาก 8.0 จริง ๆ ต้องปิด ARC
 
 default: build sign
 
