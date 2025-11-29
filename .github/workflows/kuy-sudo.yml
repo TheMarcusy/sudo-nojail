@@ -1,4 +1,4 @@
-name: Build iOS pseudo
+name: Build iOS ido
 
 # ทุกครั้งที่ push หรือ pull request ไปที่ main/master
 on:
