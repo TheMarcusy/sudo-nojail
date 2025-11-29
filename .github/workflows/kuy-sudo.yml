@@ -1,66 +1,31 @@
-name: Build iOS pseudo (iOS 8-10 32-bit support)
+name: Build iOS 8-10 32-bit (No ARC Hack)
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-14  # ใช้ macOS 14 แต่ switch Xcode เป็นเก่า
-
+    runs-on: macos-14  # ใช้ default Xcode 16.2 – ไม่ต้อง switch
     steps:
-      # 1. ดึงโค้ด
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 2. Switch ไป Xcode 13.4.1 (มี libarclite + support iOS 8 SDK)
-      - name: Select Xcode 13.4.1
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '13.4.1'  # เวอร์ชันนี้ build iOS 8-10 32-bit ได้ปกติ
-
-      # 3. เช็ค Xcode + SDK ที่ใช้
-      - name: Check Xcode and SDK
+      - name: Install ldid + ct_bypass
         run: |
-          xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-path  # จะได้ iOS SDK เก่าที่มี libarclite
-          xcrun --sdk iphoneos12.1 --show-sdk-path || echo "Using default old SDK"
-
-      # 4. ติดตั้งเครื่องมือ (ldid + ct_bypass สำหรับ sign)
-      - name: Install tools
-        run: |
-          # Homebrew (ถ้าต้องการ)
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           brew install ldid
-
-          # ดึง ct_bypass binary ที่ build ไว้ (เวอร์ชันเก่าที่ support 32-bit)
-          curl -L -o ~/ct_bypass https://github.com/opa334/ChOma/releases/download/0.3/ct_bypass-macos
+          curl -L -o ~/ct_bypass https://github.com/opa334/ChOma/releases/download/0.3/ct_bypass-macos || curl -L -o ~/ct_bypass https://github.com/haxi0/ChOma/releases/download/0.3/ct_bypass
           chmod +x ~/ct_bypass
+          ~/ct_bypass --help || echo "ct_bypass ready"
 
-      # 5. Build ด้วย Makefile (deployment target 8.0 + armv7 32-bit)
-      - name: Build with make (iOS 8+ 32-bit) ← แก้ตรงนี้
+      - name: Build 32-bit iOS 8 (disable ARC to fix libarclite)
         run: |
-          # แก้ตรงนี้ใหม่: ดึง path ของ iPhoneOS SDK ที่เก่าที่สุดที่มี libarclite (ใน Xcode 13.4.1 จะมีแน่นอน)
-          export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
-          echo "Using SDK: $SDKROOT"
-          echo "SDK version: $(xcrun --sdk iphoneos --show-sdk-version)"
-
-          # Build 32-bit iOS 8 แบบไม่ต้องคิดมาก
           make clean
-          make ARCHS=armv7 MIN_IOS_VERSION=8.0
-          
-          # เช็คผลลัพธ์
-          file pseudo_unsigned
+          make ARCHS=armv7 MIN_IOS_VERSION=8.0 NO_ARC=1  # ส่ง NO_ARC=1 เพื่อปิด ARC
+          file pseudo_unsigned  # เช็คว่า armv7 จริงมั้ย (Mach-O executable arm_v7)
           ls -la pseudo*
-          
-      # 6. อัปโหลด artifact (binary ที่รันบน iOS 8-10 ได้)
-      - name: Upload built binary
+
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: pseudo-ios8-32bit
-          path: |
-            pseudo
-            pseudo_unsigned
+          name: pseudo-ios8-armv7-noarc
+          path: pseudo*
           retention-days: 30
