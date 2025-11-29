@@ -1,6 +1,5 @@
-name: Build iOS ido
+name: Build iOS pseudo (iOS 8-10 32-bit support)
 
-# ทุกครั้งที่ push หรือ pull request ไปที่ main/master
 on:
   push:
     branches: [ main, master ]
@@ -9,36 +8,53 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14   # ใช้ macOS 14 (มี Xcode 16+) เร็ว + เสถียรสุดตอนนี้
+    runs-on: macos-14  # ใช้ macOS 14 แต่ switch Xcode เป็นเก่า
 
     steps:
       # 1. ดึงโค้ด
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. ติดตั้งเครื่องมือที่ต้องใช้
-      - name: Install required tools
-        run: |
-          # ติดตั้ง Homebrew
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      # 2. Switch ไป Xcode 13.4.1 (มี libarclite + support iOS 8 SDK)
+      - name: Select Xcode 13.4.1
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '13.4.1'  # เวอร์ชันนี้ build iOS 8-10 32-bit ได้ปกติ
 
-          # ติดตั้ง ldid
+      # 3. เช็ค Xcode + SDK ที่ใช้
+      - name: Check Xcode and SDK
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path  # จะได้ iOS SDK เก่าที่มี libarclite
+          xcrun --sdk iphoneos12.1 --show-sdk-path || echo "Using default old SDK"
+
+      # 4. ติดตั้งเครื่องมือ (ldid + ct_bypass สำหรับ sign)
+      - name: Install tools
+        run: |
+          # Homebrew (ถ้าต้องการ)
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           brew install ldid
 
-          # ดาวน์โหลด ct_bypass binary ที่ build ไว้แล้ว (เวอร์ชันที่ยังใช้ได้ดีกับ iOS 14-18)
+          # ดึง ct_bypass binary ที่ build ไว้ (เวอร์ชันเก่าที่ support 32-bit)
           curl -L -o ~/ct_bypass https://github.com/opa334/ChOma/releases/download/0.3/ct_bypass-macos
           chmod +x ~/ct_bypass
-      # 3. Build โปรเจกต์ด้วย Makefile ของมึงเลย
-      - name: Build with make
-        run: |
-          make            # จะรัน default: build sign
-          ls -la pseudo*  # เช็คว่าได้ไฟล์ pseudo มาจริงมั้ย
 
-      # 4. อัปโหลด artifact (ไฟล์ที่ build เสร็จ) ให้คนดาวน์โหลดได้
+      # 5. Build ด้วย Makefile (deployment target 8.0 + armv7 32-bit)
+      - name: Build with make (iOS 8+ 32-bit)
+        run: |
+          # ใช้ SDK เก่าเพื่อหลีก libarclite error
+          export SDKROOT=$(xcrun --sdk iphoneos12.1 --show-sdk-path 2>/dev/null || xcrun --sdk iphoneos --show-sdk-path)
+          echo "Using SDK: $SDKROOT"
+          
+          make clean
+          make ARCHS=armv7 MIN_IOS_VERSION=8.0  # Force 32-bit + iOS 8
+          ls -la pseudo*  # เช็คไฟล์ที่ build เสร็จ
+
+      # 6. อัปโหลด artifact (binary ที่รันบน iOS 8-10 ได้)
       - name: Upload built binary
         uses: actions/upload-artifact@v4
         with:
-          name: pseudo-binary
+          name: pseudo-ios8-32bit
           path: |
             pseudo
             pseudo_unsigned
