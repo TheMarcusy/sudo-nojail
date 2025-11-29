@@ -40,16 +40,21 @@ jobs:
           chmod +x ~/ct_bypass
 
       # 5. Build ด้วย Makefile (deployment target 8.0 + armv7 32-bit)
-      - name: Build with make (iOS 8+ 32-bit)
+      - name: Build with make (iOS 8+ 32-bit) ← แก้ตรงนี้
         run: |
-          # ใช้ SDK เก่าเพื่อหลีก libarclite error
-          export SDKROOT=$(xcrun --sdk iphoneos12.1 --show-sdk-path 2>/dev/null || xcrun --sdk iphoneos --show-sdk-path)
+          # แก้ตรงนี้ใหม่: ดึง path ของ iPhoneOS SDK ที่เก่าที่สุดที่มี libarclite (ใน Xcode 13.4.1 จะมีแน่นอน)
+          export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
           echo "Using SDK: $SDKROOT"
-          
-          make clean
-          make ARCHS=armv7 MIN_IOS_VERSION=8.0  # Force 32-bit + iOS 8
-          ls -la pseudo*  # เช็คไฟล์ที่ build เสร็จ
+          echo "SDK version: $(xcrun --sdk iphoneos --show-sdk-version)"
 
+          # Build 32-bit iOS 8 แบบไม่ต้องคิดมาก
+          make clean
+          make ARCHS=armv7 MIN_IOS_VERSION=8.0
+          
+          # เช็คผลลัพธ์
+          file pseudo_unsigned
+          ls -la pseudo*
+          
       # 6. อัปโหลด artifact (binary ที่รันบน iOS 8-10 ได้)
       - name: Upload built binary
         uses: actions/upload-artifact@v4
