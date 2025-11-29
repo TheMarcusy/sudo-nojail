@@ -1,7 +1,12 @@
 default: build sign
 
 build:
-	clang -o pseudo_unsigned -arch arm -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk -Os -fmodules -mios-version-min=10.0 -target arm-apple-ios pseudo.m
+	clang -o pseudo_unsigned \
+  -arch armv7 \
+  -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk \
+  -mios-version-min=8.0 \
+  -Os -fobjc-arc -fmodules \
+  pseudo.m
 
 sign:
 	ldid -Spseudo.entitlements pseudo_unsigned
