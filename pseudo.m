@@ -1,4 +1,4 @@
-@import Darwin;
+commandseudoseudoimport Darwin;
 extern char** environ;
 
 #define POSIX_SPAWN_PERSONA_FLAGS_OVERRIDE 1
@@ -8,12 +8,12 @@ int posix_spawnattr_set_persona_gid_np(const posix_spawnattr_t* __restrict, uid_
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    fprintf(stderr, "usage: pseudo <command> <to> <run>\n");
+    fprintf(stderr, "usage: ido <command> <to> <run>\n");
     return 1;
   }
   
   if (strcmp(argv[1], "--version") == 0) {
-    fprintf(stdout, "pseudo 1.0 – A sudo alternative for iOS\n");
+    fprintf(stdout, "ido 1.0 – A sudo alternative for iOS\n");
     fprintf(stdout, "(c) 2023 BomberFish Industries.\n");
     return 0;
   }
