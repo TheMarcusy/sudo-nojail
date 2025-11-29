@@ -1,4 +1,4 @@
-name: Build ido (iOS 8-12)
+name: Build ido (iOS 8-10)
 
 on: [push, pull_request]
 
