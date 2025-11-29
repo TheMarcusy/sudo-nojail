@@ -1,0 +1,49 @@
+name: Build iOS pseudo
+
+# ทุกครั้งที่ push หรือ pull request ไปที่ main/master
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: macos-14   # ใช้ macOS 14 (มี Xcode 16+) เร็ว + เสถียรสุดตอนนี้
+
+    steps:
+      # 1. ดึงโค้ด
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. ติดตั้งเครื่องมือที่ต้องใช้
+      - name: Install required tools
+        run: |
+          # ติดตั้ง Homebrew (ถ้ายังไม่มี)
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+          # ติดตั้ง ldid และ make (make มีอยู่แล้ว แต่ brew ช่วย update)
+          brew install ldid
+
+          # ดาวน์โหลดและ build ChOma (เวอร์ชันล่าสุดที่ยังใช้ได้ดี)
+          git clone https://github.com/opa334/ChOma.git
+          cd ChOma
+          make
+          cp output/tests/ct_bypass ~/
+          cd ..
+
+      # 3. Build โปรเจกต์ด้วย Makefile ของมึงเลย
+      - name: Build with make
+        run: |
+          make            # จะรัน default: build sign
+          ls -la pseudo*  # เช็คว่าได้ไฟล์ pseudo มาจริงมั้ย
+
+      # 4. อัปโหลด artifact (ไฟล์ที่ build เสร็จ) ให้คนดาวน์โหลดได้
+      - name: Upload built binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: pseudo-binary
+          path: |
+            pseudo
+            pseudo_unsigned
+          retention-days: 30
