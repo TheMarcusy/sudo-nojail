@@ -19,19 +19,15 @@ jobs:
       # 2. ติดตั้งเครื่องมือที่ต้องใช้
       - name: Install required tools
         run: |
-          # ติดตั้ง Homebrew (ถ้ายังไม่มี)
+          # ติดตั้ง Homebrew
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-          # ติดตั้ง ldid และ make (make มีอยู่แล้ว แต่ brew ช่วย update)
+          # ติดตั้ง ldid
           brew install ldid
 
-          # ดาวน์โหลดและ build ChOma (เวอร์ชันล่าสุดที่ยังใช้ได้ดี)
-          git clone https://github.com/opa334/ChOma.git
-          cd ChOma
-          make
-          cp output/tests/ct_bypass ~/
-          cd ..
-
+          # ดาวน์โหลด ct_bypass binary ที่ build ไว้แล้ว (เวอร์ชันที่ยังใช้ได้ดีกับ iOS 14-18)
+          curl -L -o ~/ct_bypass https://github.com/opa334/ChOma/releases/download/0.3/ct_bypass-macos
+          chmod +x ~/ct_bypass
       # 3. Build โปรเจกต์ด้วย Makefile ของมึงเลย
       - name: Build with make
         run: |
