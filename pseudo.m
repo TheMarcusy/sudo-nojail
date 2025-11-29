@@ -1,3 +1,4 @@
+// clang -fno-objc-arc
 #import <Foundation/Foundation.h>
 #import <spawn.h>
 #import <errno.h>
