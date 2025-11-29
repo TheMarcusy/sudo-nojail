@@ -1,0 +1,27 @@
+name: Makefile CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build: 
+  
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: make
+      run: clang -o pseudo_unsigned -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk -Os -fmodules -mios-version-min=14.0 -target arm-apple-ios pseudo.m
+
+    - name: sign
+      run: ldid -Spseudo.entitlements pseudo_unsigned
+	
+    - name: bypass
+      run: ~/ChOma/output/tests/ct_bypass -i ./pseudo_unsigned -o ./pseudo
+
+    - name: finish
+    - run: rm -f pseudo_unsigned pseudo
