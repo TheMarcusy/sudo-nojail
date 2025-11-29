@@ -1,31 +1,28 @@
-name: Build iOS 8-10 32-bit (No ARC Hack)
+name: Build ido (iOS 8-18)
 
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-14  # ใช้ default Xcode 16.2 – ไม่ต้อง switch
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ldid + ct_bypass
+      - name: Install tools
         run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           brew install ldid
-          curl -L -o ~/ct_bypass https://github.com/opa334/ChOma/releases/download/0.3/ct_bypass-macos || curl -L -o ~/ct_bypass https://github.com/haxi0/ChOma/releases/download/0.3/ct_bypass
+          curl -L -o ~/ct_bypass https://github.com/haxi0/ChOma/releases/download/0.3/ct_bypass
           chmod +x ~/ct_bypass
-          ~/ct_bypass --help || echo "ct_bypass ready"
 
-      - name: Build 32-bit iOS 8 (disable ARC to fix libarclite)
+      - name: Build for iOS 8+ (32-bit + 64-bit)
         run: |
           make clean
-          make ARCHS=armv7 MIN_IOS_VERSION=8.0 NO_ARC=1  # ส่ง NO_ARC=1 เพื่อปิด ARC
-          file pseudo_unsigned  # เช็คว่า armv7 จริงมั้ย (Mach-O executable arm_v7)
-          ls -la pseudo*
+          make ARCHS="armv7 arm64" MIN_IOS=8.0
+          file pseudo_unsigned
+          ls -lah pseudo*
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: pseudo-ios8-armv7-noarc
+          name: ido-universal-binary
           path: pseudo*
-          retention-days: 30
